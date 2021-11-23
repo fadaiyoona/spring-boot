@@ -17,6 +17,7 @@
 package org.springframework.boot.env;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.config.ConfigFileApplicationListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 
@@ -36,6 +37,10 @@ import org.springframework.core.env.Environment;
  * @author Andy Wilkinson
  * @author Stephane Nicoll
  * @since 1.3.0
+ *
+ * Environment的后置处理器
+ * 在中完成配置文件到对象的加载，并进行处理
+ * @see ConfigFileApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
  */
 public interface EnvironmentPostProcessor {
 
@@ -43,6 +48,10 @@ public interface EnvironmentPostProcessor {
 	 * Post-process the given {@code environment}.
 	 * @param environment the environment to post-process
 	 * @param application the application to which the environment belongs
+	 *
+	 * environment加载完成的后置处理
+	 * 1、处理${random.int}这种的配置文件处理
+	 * 2、可以添加自己的PropertySource
 	 */
 	void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application);
 

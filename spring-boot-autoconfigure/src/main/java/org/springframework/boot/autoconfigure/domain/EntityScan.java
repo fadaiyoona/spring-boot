@@ -57,6 +57,10 @@ import org.springframework.core.annotation.AliasFor;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+/**
+ * 该注解的作用是向容器内注入一个组件 组件的作用是保存一些包路径
+ * @see org.springframework.boot.autoconfigure.orm.jpa.JpaBaseConfiguration#getPackagesToScan
+ */
 @Import(EntityScanPackages.Registrar.class)
 public @interface EntityScan {
 

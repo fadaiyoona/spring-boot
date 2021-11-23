@@ -84,6 +84,7 @@ public class TomcatEmbeddedServletContainer implements EmbeddedServletContainer 
 		Assert.notNull(tomcat, "Tomcat Server must not be null");
 		this.tomcat = tomcat;
 		this.autoStart = autoStart;
+		// 进行初始化，很重要，做了很多东西
 		initialize();
 	}
 
@@ -94,6 +95,7 @@ public class TomcatEmbeddedServletContainer implements EmbeddedServletContainer 
 				addInstanceIdToEngineName();
 				try {
 					final Context context = findContext();
+					// 加一个生命周期的监听器
 					context.addLifecycleListener(new LifecycleListener() {
 
 						@Override
@@ -109,6 +111,12 @@ public class TomcatEmbeddedServletContainer implements EmbeddedServletContainer 
 					});
 
 					// Start the server to trigger initialization listeners
+					// 这时候就会触发tomcat的生命周期相关的初始化了。并不是tomcat启动
+					// ServletContainerInitializer
+					// Lifecycle
+					// LifecycleBase
+					// LifecycleMBeanBase
+					// LifecycleState
 					this.tomcat.start();
 
 					// We can re-throw failure exception directly in the main thread

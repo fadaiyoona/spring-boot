@@ -137,6 +137,9 @@ public class EntityScanPackages {
 	/**
 	 * {@link ImportBeanDefinitionRegistrar} to store the base package from the importing
 	 * configuration.
+	 *
+	 * 该注解的作用是向容器内注入一个组件 组件的作用是保存一些包路径
+	 * @see org.springframework.boot.autoconfigure.orm.jpa.JpaBaseConfiguration#getPackagesToScan
 	 */
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	static class Registrar implements ImportBeanDefinitionRegistrar {

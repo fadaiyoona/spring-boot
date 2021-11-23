@@ -31,6 +31,9 @@ import org.springframework.core.io.support.SpringFactoriesLoader;
  * @author Phillip Webb
  * @author Dave Syer
  * @since 1.0.0
+ *
+ * SpringApplication run方法的监听器
+ * 构造方法注意，构造参数要是(SpringApplication application, String[] args)
  */
 public interface SpringApplicationRunListener {
 

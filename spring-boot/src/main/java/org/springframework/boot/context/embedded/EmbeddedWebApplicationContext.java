@@ -16,23 +16,8 @@
 
 package org.springframework.boot.context.embedded;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.Scope;
@@ -48,11 +33,10 @@ import org.springframework.web.context.ContextLoader;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.GenericWebApplicationContext;
-import org.springframework.web.context.support.ServletContextAwareProcessor;
-import org.springframework.web.context.support.ServletContextResource;
-import org.springframework.web.context.support.ServletContextScope;
-import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.context.support.*;
+
+import javax.servlet.*;
+import java.util.*;
 
 /**
  * A {@link WebApplicationContext} that can be used to bootstrap itself from a contained
@@ -132,6 +116,7 @@ public class EmbeddedWebApplicationContext extends GenericWebApplicationContext 
 	protected void onRefresh() {
 		super.onRefresh();
 		try {
+			// 创建内置的web服务器
 			createEmbeddedServletContainer();
 		}
 		catch (Throwable ex) {
@@ -142,6 +127,7 @@ public class EmbeddedWebApplicationContext extends GenericWebApplicationContext 
 	@Override
 	protected void finishRefresh() {
 		super.finishRefresh();
+		// 真正启动tomcat
 		EmbeddedServletContainer localContainer = startEmbeddedServletContainer();
 		if (localContainer != null) {
 			publishEvent(new EmbeddedServletContainerInitializedEvent(this, localContainer));
@@ -151,6 +137,7 @@ public class EmbeddedWebApplicationContext extends GenericWebApplicationContext 
 	@Override
 	protected void onClose() {
 		super.onClose();
+		// 关闭并释放web服务器
 		stopAndReleaseEmbeddedServletContainer();
 	}
 
@@ -158,7 +145,13 @@ public class EmbeddedWebApplicationContext extends GenericWebApplicationContext 
 		EmbeddedServletContainer localContainer = this.embeddedServletContainer;
 		ServletContext localServletContext = getServletContext();
 		if (localContainer == null && localServletContext == null) {
+			/**
+			 * 获取web容器的工厂类，在
+			 * @see org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration
+			 * 中注册了BeanDefinition
+			 */
 			EmbeddedServletContainerFactory containerFactory = getEmbeddedServletContainerFactory();
+			// 创建web服务器
 			this.embeddedServletContainer = containerFactory.getEmbeddedServletContainer(getSelfInitializer());
 		}
 		else if (localServletContext != null) {
@@ -291,10 +284,12 @@ public class EmbeddedWebApplicationContext extends GenericWebApplicationContext 
 		return localContainer;
 	}
 
+	// 关闭并释放web服务器
 	private void stopAndReleaseEmbeddedServletContainer() {
 		EmbeddedServletContainer localContainer = this.embeddedServletContainer;
 		if (localContainer != null) {
 			try {
+				// 关闭并释放web服务器
 				localContainer.stop();
 				this.embeddedServletContainer = null;
 			}

@@ -161,6 +161,7 @@ public class TomcatEmbeddedServletContainerFactory extends AbstractEmbeddedServl
 
 	@Override
 	public EmbeddedServletContainer getEmbeddedServletContainer(ServletContextInitializer... initializers) {
+		// 创建tomcat服务器
 		Tomcat tomcat = new Tomcat();
 		File baseDir = (this.baseDirectory != null) ? this.baseDirectory : createTempDir("tomcat");
 		tomcat.setBaseDir(baseDir.getAbsolutePath());
@@ -174,6 +175,7 @@ public class TomcatEmbeddedServletContainerFactory extends AbstractEmbeddedServl
 			tomcat.getService().addConnector(additionalConnector);
 		}
 		prepareContext(tomcat.getHost(), initializers);
+		// 创建内嵌tomcat服务器容器，进行初始化，很重要，做了很多东西
 		return getTomcatEmbeddedServletContainer(tomcat);
 	}
 
@@ -532,6 +534,7 @@ public class TomcatEmbeddedServletContainerFactory extends AbstractEmbeddedServl
 	 * @return a new {@link TomcatEmbeddedServletContainer} instance
 	 */
 	protected TomcatEmbeddedServletContainer getTomcatEmbeddedServletContainer(Tomcat tomcat) {
+		// 创建内嵌tomcat服务器容器，进行初始化，很重要，做了很多东西
 		return new TomcatEmbeddedServletContainer(tomcat, getPort() >= 0);
 	}
 

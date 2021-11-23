@@ -16,23 +16,8 @@
 
 package org.springframework.boot;
 
-import java.lang.reflect.Constructor;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.groovy.GroovyBeanDefinitionReader;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -52,27 +37,18 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
-import org.springframework.core.env.CommandLinePropertySource;
-import org.springframework.core.env.CompositePropertySource;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.MapPropertySource;
-import org.springframework.core.env.MutablePropertySources;
-import org.springframework.core.env.PropertySource;
-import org.springframework.core.env.SimpleCommandLinePropertySource;
-import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.env.*;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.SpringFactoriesLoader;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ObjectUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StopWatch;
-import org.springframework.util.StringUtils;
+import org.springframework.util.*;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.StandardServletEnvironment;
+
+import java.lang.reflect.Constructor;
+import java.security.AccessControlException;
+import java.util.*;
 
 /**
  * Classes that can be used to bootstrap and launch a Spring application from a Java main
@@ -223,6 +199,7 @@ public class SpringApplication {
 	 * @see #SpringApplication(ResourceLoader, Object...)
 	 */
 	public SpringApplication(Object... sources) {
+		// 初始化SpringApplication对象
 		initialize(sources);
 	}
 
@@ -246,12 +223,20 @@ public class SpringApplication {
 		if (sources != null && sources.length > 0) {
 			this.sources.addAll(Arrays.asList(sources));
 		}
+		// 判断当前应用程序是否是web环境，近判断是否是Servlet环境，不支持Reactive（2.X版本支持了）
 		this.webEnvironment = deduceWebEnvironment();
+		// 加载初始化容器的实例化对象
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		// 加载监听器的实例化对象
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		// 找到当前应用程序的主类
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
+	/**
+	 * 判断当前应用程序的类型：Servlet | Reactive | None
+	 * @return Servlet | Reactive | None
+	 */
 	private boolean deduceWebEnvironment() {
 		for (String className : WEB_ENVIRONMENT_CLASSES) {
 			if (!ClassUtils.isPresent(className, null)) {
@@ -287,23 +272,38 @@ public class SpringApplication {
 		stopWatch.start();
 		ConfigurableApplicationContext context = null;
 		FailureAnalyzers analyzers = null;
+		// 设置系统属性“java.awt.headless”的值，默认为true，用于运行headless服务器，进行简单的图像处理，多用于在缺少显示屏、键盘或者鼠标时的系统配置，很多监控工具如jconsole 需要将该值设置为true
 		configureHeadlessProperty();
+		// 创建所有spring运行监听器并发布应用启动事件，简单说的话就是获取SpringApplicationRunListener类型的实例（EventPublishingRunListener对象），
+		// 并封装进SpringApplicationRunListeners对象，然后返回这个SpringApplicationRunListeners对象。
+		// 说的再简单点，getRunListeners就是准备好了运行时监听器EventPublishingRunListener（持有事件多播器对象）。
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		// 发布应用上下文启动监听事件
 		listeners.starting();
 		try {
+			// 初始化默认应用参数类，java -jar XXX --service.port=80，解析这个service.port参数封装起来
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// 根据运行监听器和应用参数来准备spring环境
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+			// 创建banner打印类
 			Banner printedBanner = printBanner(environment);
+			// 创建应用上下文容器
 			context = createApplicationContext();
 			analyzers = new FailureAnalyzers(context);
+			// 准备应用上下文，该步骤包含一个非常关键的操作，将启动类注入容器，为后续开启自动化提供基础
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+			// 刷新应用上下文，注册一个关闭的钩子，web环境下，用于监听tomcat容器的关闭
 			refreshContext(context);
+			// 应用上下文刷新后置处理，做一些扩展功能，ApplicationRunner、CommandLineRunner就是在这里处理的
 			afterRefresh(context, applicationArguments);
+			// 发布应用上下文启动监听事件
 			listeners.finished(context, null);
 			stopWatch.stop();
+			// 输出日志记录执行主类名、时间信息
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
 			}
+			// 返回应用上下文
 			return context;
 		}
 		catch (Throwable ex) {
@@ -315,8 +315,13 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
+		// 获取或者创建应用环境
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
+		// 配置应用环境，配置propertySource和activeProfiles
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
+		// 发布环境准备完成事件
+		// .yml/.yaml/.properties文件的处理，文件中函数的处理，都是通过监听这个事件来处理的
+		// YamlPropertySourceLoader 由ConfigFileApplicationListener这个监听器加载过来进行解析
 		listeners.environmentPrepared(environment);
 		if (!this.webEnvironment) {
 			environment = new EnvironmentConverter(getClassLoader())
@@ -329,6 +334,7 @@ public class SpringApplication {
 			SpringApplicationRunListeners listeners, ApplicationArguments applicationArguments, Banner printedBanner) {
 		context.setEnvironment(environment);
 		postProcessApplicationContext(context);
+		// 对初始化器进行初始化工作的执行，这个初始化器加了一些BeanPostProcessor、BeanFactoryPostProcessor
 		applyInitializers(context);
 		listeners.contextPrepared(context);
 		if (this.logStartupInfo) {
@@ -345,6 +351,7 @@ public class SpringApplication {
 		// Load the sources
 		Set<Object> sources = getSources();
 		Assert.notEmpty(sources, "Sources must not be empty");
+		// 将启动配置类注册成BeanDefinition
 		load(context, sources.toArray(new Object[sources.size()]));
 		listeners.contextLoaded(context);
 	}
@@ -361,6 +368,15 @@ public class SpringApplication {
 		}
 	}
 
+	/**
+	 * java.awt.headless模式是在缺少显示屏、键盘或者鼠标的系统配置
+	 * 	当配置了如下属性之后，应用程序可以执行如下操作：
+	 * 1、创建轻量级组件
+	 * 2、收集关于可用的字体、字体指标和字体设置的信息
+	 * 3、设置颜色来渲染准备图片
+	 * 4、创造和获取图像，为渲染准备图片
+	 * 5、使用java.awt.PrintJob,java.awt.print.*和javax.print.*类里的方法进行打印
+	 */
 	private void configureHeadlessProperty() {
 		System.setProperty(SYSTEM_PROPERTY_JAVA_AWT_HEADLESS,
 				System.getProperty(SYSTEM_PROPERTY_JAVA_AWT_HEADLESS, Boolean.toString(this.headless)));
@@ -405,6 +421,7 @@ public class SpringApplication {
 		return instances;
 	}
 
+	// 获取或者创建应用环境，根据应用程序的类型可以分为servlet环境、标准环境(特殊的非web环境)和响应式环境
 	private ConfigurableEnvironment getOrCreateEnvironment() {
 		if (this.environment != null) {
 			return this.environment;
@@ -427,7 +444,9 @@ public class SpringApplication {
 	 * @see #configurePropertySources(ConfigurableEnvironment, String[])
 	 */
 	protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
+		//配置property sources
 		configurePropertySources(environment, args);
+		//配置profiles
 		configureProfiles(environment, args);
 	}
 
@@ -494,6 +513,8 @@ public class SpringApplication {
 	 * class before falling back to a suitable default.
 	 * @return the application context (not yet refreshed)
 	 * @see #setApplicationContextClass(Class)
+	 *
+	 * 创建应用的上下文:根据不同哦那个的应用类型初始化不同的上下文应用类
 	 */
 	protected ConfigurableApplicationContext createApplicationContext() {
 		Class<?> contextClass = this.applicationContextClass;
@@ -1066,6 +1087,8 @@ public class SpringApplication {
 	 * @param source the source to load
 	 * @param args the application arguments (usually passed from a Java main method)
 	 * @return the running {@link ApplicationContext}
+	 *
+	 * SpringBoot项目main函数启动的入口
 	 */
 	public static ConfigurableApplicationContext run(Object source, String... args) {
 		return run(new Object[] { source }, args);
@@ -1077,8 +1100,11 @@ public class SpringApplication {
 	 * @param sources the sources to load
 	 * @param args the application arguments (usually passed from a Java main method)
 	 * @return the running {@link ApplicationContext}
+	 *
+	 * SpringBoot项目main函数启动的入口
 	 */
 	public static ConfigurableApplicationContext run(Object[] sources, String[] args) {
+		// 先创建一个SpringApplication对象，然后调用run启动SpringBoot项目
 		return new SpringApplication(sources).run(args);
 	}
 

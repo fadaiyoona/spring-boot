@@ -28,6 +28,8 @@ package org.springframework.boot.context.embedded;
  * @author Dave Syer
  * @since 1.0.0
  * @see EmbeddedServletContainerFactory
+ *
+ * web容器
  */
 public interface EmbeddedServletContainer {
 
@@ -35,6 +37,8 @@ public interface EmbeddedServletContainer {
 	 * Starts the embedded servlet container. Calling this method on an already started
 	 * container has no effect.
 	 * @throws EmbeddedServletContainerException if the container cannot be started
+	 *
+	 * 启动web容器
 	 */
 	void start() throws EmbeddedServletContainerException;
 
@@ -42,12 +46,16 @@ public interface EmbeddedServletContainer {
 	 * Stops the embedded servlet container. Calling this method on an already stopped
 	 * container has no effect.
 	 * @throws EmbeddedServletContainerException if the container cannot be stopped
+	 *
+	 * 关闭web容器
 	 */
 	void stop() throws EmbeddedServletContainerException;
 
 	/**
 	 * Return the port this server is listening on.
 	 * @return the port (or -1 if none)
+	 *
+	 * 获取web服务器端口
 	 */
 	int getPort();
 

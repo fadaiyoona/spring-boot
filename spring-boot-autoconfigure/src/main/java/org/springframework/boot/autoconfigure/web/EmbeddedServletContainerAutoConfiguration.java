@@ -60,6 +60,8 @@ import org.springframework.util.ObjectUtils;
  * @author Ivan Sopov
  * @author Stephane Nicoll
  * @since 1.0.0
+ *
+ * 内置web服务器自动创建的自动配置装载配置类
  */
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @Configuration

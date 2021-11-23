@@ -16,14 +16,9 @@
 
 package org.springframework.boot.autoconfigure;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 import org.springframework.context.annotation.Import;
+
+import java.lang.annotation.*;
 
 /**
  * Indicates that the package containing the annotated class should be registered with
@@ -32,6 +27,9 @@ import org.springframework.context.annotation.Import;
  * @author Phillip Webb
  * @since 1.3.0
  * @see AutoConfigurationPackages
+ *
+ * 该注解的作用是向容器内注入一个组件 组件的作用是保存一些包路径
+ * @see org.springframework.boot.autoconfigure.orm.jpa.JpaBaseConfiguration#getPackagesToScan
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
